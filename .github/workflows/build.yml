@@ -1,0 +1,30 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitppc:latest
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y git ca-certificates
+
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: make
+
+      - name: Upload build output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vectrek-wii-build
+          path: |
+            *.dol
+            *.elf
+            *.map
+          if-no-files-found: warn

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<app version="1">
+  <name>VecTrek</name>
+  <coder>petermccoy</coder>
+  <version>1.0</version>
+  <release_date>20260907000000</release_date>
+  <short_description>Vector space combat sim</short_description>
+  <long_description>Turn-and-burn vector-graphics space combat against AI drones in a hazard-littered arena with real gravity: suns with orbiting planets, paired wormholes and drifting asteroids. A homebrew Wii port of the VecTrek Android game.</long_description>
+  <ahb_access/>
+</app>
