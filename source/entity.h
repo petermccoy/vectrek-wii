@@ -8,7 +8,7 @@
 
 typedef struct GameWorld GameWorld; // forward decl, defined in gameworld.h
 
-#define SHIP_NAME_LEN 16
+#define SHIP_NAME_LEN 24
 
 /**
  * Per-tick pilot intent. Filled by the local controller (pointer + buttons),

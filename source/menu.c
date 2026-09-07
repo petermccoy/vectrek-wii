@@ -131,7 +131,7 @@ LoadoutAction loadout_menu_update(Loadout *outLoadout) {
     text_color(over ? TXT_RED : TXT_CYAN);
     text_at(3, 24, "POINTS  %d / %d%s", cost, LOADOUT_BUDGET, over ? "  -- OVER BUDGET" : "");
 
-    char lvlbuf[8];
+    char lvlbuf[16];
     int row = 5;
     for (int i = 0; i < WEAPON_COUNT; i++, row++) {
         int eq = editLo.weaponEquipped[i];
