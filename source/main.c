@@ -230,7 +230,7 @@ static void gx_init(void) {
     // happened to leave it at -- unreliable, and the likely cause of the
     // solid-color/garbled screen some builds showed. Pin it explicitly to
     // "no lighting, output the per-vertex color untouched".
-    GX_SetChanCtrl(GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
+    GX_SetChanCtrl(GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHTNULL, GX_DF_NONE, GX_AF_NONE);
     GX_SetNumTexGens(0);
     GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
     GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
