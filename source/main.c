@@ -226,6 +226,11 @@ static void gx_init(void) {
     GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 
     GX_SetNumChans(1);
+    // Without this, channel 0's ambient/material source is whatever GX_Init
+    // happened to leave it at -- unreliable, and the likely cause of the
+    // solid-color/garbled screen some builds showed. Pin it explicitly to
+    // "no lighting, output the per-vertex color untouched".
+    GX_SetChanCtrl(GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
     GX_SetNumTexGens(0);
     GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
     GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
