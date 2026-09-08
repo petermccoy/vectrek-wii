@@ -29,8 +29,10 @@ typedef struct {
 void hud_init(Hud *hud);
 void hud_layout(Hud *hud, int w, int h, const Loadout *lo);
 
-/** me may be NULL (no local ship yet). */
+/** me may be NULL (no local ship yet). playerTag is NULL for single-player's
+ *  full status line, or a short tag like "P1" for multiplayer's compact one
+ *  (also switches the game-over overlay to a "spectating" message). */
 void hud_draw(Hud *hud, const Camera *cam, GameWorld *world, Ship *me,
-              const ShipInput *input, float time, int gameOver);
+              const ShipInput *input, float time, int gameOver, const char *playerTag);
 
 #endif

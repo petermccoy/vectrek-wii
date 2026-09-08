@@ -71,6 +71,17 @@ void ship_update(Ship *s, GameWorld *world, float dt) {
                 s->energy -= s->stats.thrustDrain * dt;
                 s->thrusting = 1;
             }
+        } else {
+            // Direct turn-and-burn (split-screen multiplayer, no absolute
+            // pointer to aim with): D-pad rotates the ship in place, thrust
+            // burns along the current heading regardless of turning.
+            if (s->input.turnLeft) s->heading = wrap_angle(s->heading - s->stats.turnRate * dt);
+            if (s->input.turnRight) s->heading = wrap_angle(s->heading + s->stats.turnRate * dt);
+            if (s->input.thrust && s->energy > 0.5f) {
+                s->vel = vec2_add(s->vel, vec2_from_angle_len(s->heading, s->stats.thrustAccel * dt));
+                s->energy -= s->stats.thrustDrain * dt;
+                s->thrusting = 1;
+            }
         }
         float sp = vec2_length(s->vel);
         if (sp > s->stats.maxSpeed) s->vel = vec2_scale(s->vel, s->stats.maxSpeed / sp);

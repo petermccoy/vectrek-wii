@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "text.h"
+#include "input.h"
 #include <wiiuse/wpad.h>
 #include <string.h>
 #include <stdio.h>
@@ -25,30 +26,75 @@ void menu_main_init(void) {
     text_clear();
 }
 
+#define MAIN_MENU_ITEM_COUNT 4
+
 MenuAction menu_main_update(void) {
     u32 down = WPAD_ButtonsDown(WPAD_CHAN_0);
-    if (down & WPAD_BUTTON_DOWN) mainSel = (mainSel + 1) % 3;
-    if (down & WPAD_BUTTON_UP) mainSel = (mainSel + 2) % 3;
+    if (down & WPAD_BUTTON_DOWN) mainSel = (mainSel + 1) % MAIN_MENU_ITEM_COUNT;
+    if (down & WPAD_BUTTON_UP) mainSel = (mainSel + MAIN_MENU_ITEM_COUNT - 1) % MAIN_MENU_ITEM_COUNT;
 
     text_color(TXT_CYAN);
     text_at(3, 28, "V E C T R E K");
     text_color(TXT_WHITE);
     text_at(5, 20, "old-school vector space combat -- Wii port");
 
-    const char *items[3] = { "START PRACTICE ARENA", "OUTFITTING BAY", "EXIT" };
-    for (int i = 0; i < 3; i++) {
+    const char *items[MAIN_MENU_ITEM_COUNT] = {
+        "PRACTICE ARENA (SOLO)", "MULTIPLAYER (SPLIT-SCREEN)", "OUTFITTING BAY", "EXIT",
+    };
+    for (int i = 0; i < MAIN_MENU_ITEM_COUNT; i++) {
         text_color(i == mainSel ? TXT_GREEN : TXT_WHITE);
-        text_at(9 + i * 2, 24, "%c %s", i == mainSel ? '>' : ' ', items[i]);
+        text_at(9 + i * 2, 20, "%c %s", i == mainSel ? '>' : ' ', items[i]);
     }
     text_color(TXT_WHITE);
     text_at(20, 18, "D-PAD: select      A: confirm      HOME: quit");
 
     if (down & WPAD_BUTTON_A) {
         if (mainSel == 0) return MENU_ACTION_START;
-        if (mainSel == 1) return MENU_ACTION_OUTFIT;
+        if (mainSel == 1) return MENU_ACTION_MULTIPLAYER;
+        if (mainSel == 2) return MENU_ACTION_OUTFIT;
         return MENU_ACTION_EXIT;
     }
     return MENU_ACTION_NONE;
+}
+
+// ------------------------------------------------------------------
+// Multiplayer setup: pick a player count, show which Wiimotes are synced.
+// ------------------------------------------------------------------
+
+static int mpPlayerCount = 2;
+
+void mp_setup_menu_init(void) {
+    mpPlayerCount = 2;
+    text_clear();
+}
+
+MpSetupAction mp_setup_menu_update(int *outPlayerCount) {
+    u32 down = WPAD_ButtonsDown(WPAD_CHAN_0);
+    if ((down & WPAD_BUTTON_RIGHT) && mpPlayerCount < MP_MAX_PLAYERS) mpPlayerCount++;
+    if ((down & WPAD_BUTTON_LEFT) && mpPlayerCount > MP_MIN_PLAYERS) mpPlayerCount--;
+
+    text_color(TXT_CYAN);
+    text_at(3, 24, "MULTIPLAYER -- SPLIT SCREEN");
+    text_color(TXT_WHITE);
+    text_at(6, 12, "PLAYERS:  <  %d  >", mpPlayerCount);
+
+    text_at(9, 12, "Each player needs their own synced Wiimote:");
+    for (int i = 0; i < mpPlayerCount; i++) {
+        int connected = input_wpad_connected(i);
+        text_color(connected ? TXT_GREEN : TXT_RED);
+        text_at(11 + i, 14, "PLAYER %d (Wiimote %d): %s", i + 1, i + 1, connected ? "READY" : "not found");
+    }
+
+    text_color(TXT_WHITE);
+    text_at(18, 12, "controls: D-PAD turn/thrust, A/B/1/2 fire, -/+ shield/cloak");
+    text_at(22, 12, "LEFT/RIGHT: player count   A: start   B: back");
+
+    if (down & WPAD_BUTTON_A) {
+        *outPlayerCount = mpPlayerCount;
+        return MP_SETUP_ACTION_START;
+    }
+    if (down & WPAD_BUTTON_B) return MP_SETUP_ACTION_CANCEL;
+    return MP_SETUP_ACTION_NONE;
 }
 
 // ------------------------------------------------------------------

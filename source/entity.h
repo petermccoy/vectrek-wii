@@ -18,6 +18,11 @@ typedef struct {
     int hasSteer;
     Vec2 steer;                 // world-space point the pilot is aiming at
     int thrust;                 // burn while turning toward the steer point
+    // Split-screen multiplayer has no absolute pointer that maps to any one
+    // player's quadrant, so it steers with these instead: turn left/right at
+    // the ship's full turn rate while thrust burns independently. Ignored
+    // whenever hasSteer is set (single-player's IR-pointer aiming wins).
+    int turnLeft, turnRight;
     int fireHeld[WEAPON_COUNT];
     int shield;                 // toggle states, not momentary
     int cloak;

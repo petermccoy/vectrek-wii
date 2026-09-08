@@ -24,7 +24,9 @@ static void draw_beam(const Camera *cam, Vec2 from, Vec2 to, float t);
 static void draw_ship(const Camera *cam, Ship *ship, int isMe, float time);
 static void draw_explosion(const Camera *cam, Vec2 pos, float size, float t);
 
-void render_init(Camera *cam, float viewW, float viewH) {
+void render_init(Camera *cam, float originX, float originY, float viewW, float viewH) {
+    cam->originX = originX;
+    cam->originY = originY;
     cam->viewW = viewW;
     cam->viewH = viewH;
     cam->scale = viewW / VIEW_SPAN;
@@ -326,8 +328,8 @@ static void draw_ship(const Camera *cam, Ship *ship, int isMe, float time) {
 
     if (!isMe && !ship->cloakOn) {
         Vec2 sp = w2s(cam, vec2(ship->pos.x, ship->pos.y - r * 2.2f));
-        int col = (int)(sp.x / 8.0f) - (int)(strlen(ship->name) / 2);
-        int row = (int)(sp.y / 16.0f);
+        int col = (int)((cam->originX + sp.x) / 8.0f) - (int)(strlen(ship->name) / 2);
+        int row = (int)((cam->originY + sp.y) / 16.0f);
         if (col < 0) col = 0;
         if (row < 0) row = 0;
         text_queue(row, col, TXT_CYAN, "%s", ship->name);

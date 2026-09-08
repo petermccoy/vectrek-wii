@@ -55,12 +55,13 @@ void hud_layout(Hud *hud, int w, int h, const Loadout *lo) {
     }
 }
 
-static void draw_bars(Ship *me, float scale) {
+static void draw_bars(const Camera *cam, Ship *me, float scale) {
     float x0 = dp(60.0f, scale);
     float y0 = dp(20.0f, scale);
     float bw = dp(150.0f, scale);
     float bh = dp(9.0f, scale);
     float rowStep = bh + dp(8.0f, scale);
+    int labelCol = (int)(cam->originX / 8.0f);
 
     float hullFrac = clampf(me->hull / me->maxHull, 0.0f, 1.0f);
     GXColor hullColor = rgba(
@@ -70,14 +71,14 @@ static void draw_bars(Ship *me, float scale) {
     gfx_rect_fill(x0, y0, x0 + bw * hullFrac, y0 + bh, hullColor);
     gfx_line_width(1.2f);
     gfx_rect_outline(x0, y0, x0 + bw, y0 + bh, pal_alpha(hullColor, 160));
-    text_queue((int)(y0 / 16.0f), 0, TXT_WHITE, "HULL");
+    text_queue((int)((cam->originY + y0) / 16.0f), labelCol, TXT_WHITE, "HULL");
 
     float energyFrac = clampf(me->energy / me->maxEnergy, 0.0f, 1.0f);
     float y1 = y0 + rowStep;
     gfx_rect_fill(x0, y1, x0 + bw * energyFrac, y1 + bh, PAL_SELF);
     gfx_line_width(1.2f);
     gfx_rect_outline(x0, y1, x0 + bw, y1 + bh, pal_alpha(PAL_SELF, 160));
-    text_queue((int)(y1 / 16.0f), 0, TXT_CYAN, "ENRG");
+    text_queue((int)((cam->originY + y1) / 16.0f), labelCol, TXT_CYAN, "ENRG");
 }
 
 static void draw_radar(const Camera *cam, GameWorld *world, Ship *me, float time, float scale) {
@@ -120,7 +121,7 @@ static void draw_radar(const Camera *cam, GameWorld *world, Ship *me, float time
     gfx_circle_fill(cx, cy, dp(2.0f, scale), 8, PAL_SELF);
 }
 
-static void draw_buttons(Hud *hud, GameWorld *world, Ship *me, const ShipInput *input, float time) {
+static void draw_buttons(const Camera *cam, Hud *hud, GameWorld *world, Ship *me, const ShipInput *input, float time) {
     for (int bi = 0; bi < hud->buttonCount; bi++) {
         HudBtn *b = &hud->buttons[bi];
         GXColor color = PAL_SELF;
@@ -175,8 +176,8 @@ static void draw_buttons(Hud *hud, GameWorld *world, Ship *me, const ShipInput *
             }
         }
 
-        int col = (int)(b->cx / 8.0f) - 3;
-        int row = (int)(b->cy / 16.0f) + 2;
+        int col = (int)((cam->originX + b->cx) / 8.0f) - 3;
+        int row = (int)((cam->originY + b->cy) / 16.0f) + 2;
         if (col < 0) col = 0;
         const char *label = b->hasWeapon ? WEAPON_INFO[b->weapon].shortLabel : DEFENSE_INFO[b->defense].shortLabel;
         text_queue(row, col, usable ? TXT_WHITE : TXT_YELLOW, "%s[%s]", label, b->keyLabel);
@@ -184,45 +185,57 @@ static void draw_buttons(Hud *hud, GameWorld *world, Ship *me, const ShipInput *
     }
 }
 
-static void draw_leave_orbit(float w, float h, float time, float scale) {
-    float cx = w / 2.0f, cy = h - dp(64.0f, scale), r = dp(34.0f, scale);
+static void draw_leave_orbit(const Camera *cam, float time, float scale) {
+    float cx = cam->viewW / 2.0f, cy = cam->viewH - dp(64.0f, scale), r = dp(34.0f, scale);
     int a = (int)clampf(30.0f + 20.0f * sinf(time * 4.0f), 15.0f, 55.0f);
     gfx_circle_fill(cx, cy, r, 24, pal_alpha(PAL_PLANET, a));
     gfx_line_width(2.0f);
     gfx_circle_outline(cx, cy, r, 24, pal_alpha(PAL_PLANET, 230));
-    int col = (int)(cx / 8.0f) - 6;
-    int row = (int)(cy / 16.0f);
+    int col = (int)((cam->originX + cx) / 8.0f) - 6;
+    int row = (int)((cam->originY + cy) / 16.0f);
     if (col < 0) col = 0;
     text_queue(row, col, TXT_CYAN, "LEAVE ORBIT [D-PAD UP]");
 }
 
-static void draw_status_line(Ship *me) {
-    char buf[96];
-    const char *orbiting = (me != NULL && ship_in_orbit(me)) ? "  IN ORBIT: REPAIR & REARM" : "";
-    snprintf(buf, sizeof(buf), "PRACTICE ARENA  KILLS %d%s", me ? me->kills : 0, orbiting);
-    int col = 40 - (int)strlen(buf) / 2;
-    if (col < 0) col = 0;
-    text_queue(0, col, TXT_WHITE, "%s", buf);
+/** playerTag is NULL for single-player's full status line, or a short tag
+ *  like "P1" for multiplayer's compact per-quadrant one. */
+static void draw_status_line(const Camera *cam, Ship *me, const char *playerTag) {
+    char buf[64];
+    if (playerTag != NULL) {
+        const char *orbiting = (me != NULL && ship_in_orbit(me)) ? " ORBIT" : "";
+        snprintf(buf, sizeof(buf), "%s K:%d%s", playerTag, me ? me->kills : 0, orbiting);
+    } else {
+        const char *orbiting = (me != NULL && ship_in_orbit(me)) ? "  IN ORBIT: REPAIR & REARM" : "";
+        snprintf(buf, sizeof(buf), "PRACTICE ARENA  KILLS %d%s", me ? me->kills : 0, orbiting);
+    }
+    int localCol = (int)(cam->viewW / 8.0f / 2.0f) - (int)strlen(buf) / 2;
+    if (localCol < 0) localCol = 0;
+    int col = (int)(cam->originX / 8.0f) + localCol;
+    int row = (int)(cam->originY / 16.0f);
+    text_queue(row, col, TXT_WHITE, "%s", buf);
 }
 
-static void draw_overlay_gameover(float w, float h) {
-    int row = (int)(h / 16.0f / 2.0f);
-    int col = (int)(w / 8.0f / 2.0f) - 7;
-    if (col < 0) col = 0;
+static void draw_overlay_gameover(const Camera *cam, int multiplayer) {
+    int localRow = (int)(cam->viewH / 16.0f / 2.0f);
+    int localCol = (int)(cam->viewW / 8.0f / 2.0f) - 7;
+    if (localCol < 0) localCol = 0;
+    int row = (int)(cam->originY / 16.0f) + localRow;
+    int col = (int)(cam->originX / 8.0f) + localCol;
     text_queue(row, col, TXT_RED, "SHIP DESTROYED");
-    text_queue(row + 1, col - 6 < 0 ? 0 : col - 6, TXT_WHITE, "hull integrity lost -- press A");
+    const char *sub = multiplayer ? "spectating..." : "hull integrity lost -- press A";
+    text_queue(row + 1, col - 6 < 0 ? 0 : col - 6, TXT_WHITE, "%s", sub);
 }
 
 void hud_draw(Hud *hud, const Camera *cam, GameWorld *world, Ship *me,
-              const ShipInput *input, float time, int gameOver) {
+              const ShipInput *input, float time, int gameOver, const char *playerTag) {
     float scale = cam->viewH / 480.0f;
     if (me != NULL) {
         hud_layout(hud, (int)cam->viewW, (int)cam->viewH, &me->loadout);
-        draw_bars(me, scale);
+        draw_bars(cam, me, scale);
         draw_radar(cam, world, me, time, scale);
-        draw_buttons(hud, world, me, input, time);
-        if (ship_in_orbit(me)) draw_leave_orbit(cam->viewW, cam->viewH, time, scale);
+        draw_buttons(cam, hud, world, me, input, time);
+        if (ship_in_orbit(me)) draw_leave_orbit(cam, time, scale);
     }
-    draw_status_line(me);
-    if (gameOver) draw_overlay_gameover(cam->viewW, cam->viewH);
+    draw_status_line(cam, me, playerTag);
+    if (gameOver) draw_overlay_gameover(cam, playerTag != NULL);
 }

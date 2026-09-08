@@ -25,18 +25,23 @@ lock-everyone-in-range-and-split-the-damage behavior and cloak dropping the
 moment you fire (mines excepted). Ships are built from the same 20-point
 outfitting budget in the OUTFITTING BAY.
 
-This port ships the single-player **Practice Arena**: your ship against
-respawning AI drones (the same wandering/chasing/firing brain as the
-Android build). See [Not yet ported](#not-yet-ported) below for what's
-missing relative to the Android app.
+This port ships two ways to play:
+
+- **Practice Arena**: solo, full-screen, against respawning AI drones (the
+  same wandering/chasing/firing brain as the Android build).
+- **Multiplayer**: local split-screen for 2-4 players, one Wiimote each,
+  pilot-vs-pilot, no drones. See [Multiplayer](#multiplayer) below.
+
+See [Not yet ported](#not-yet-ported) for what's still missing relative to
+the Android app (LAN play, chiefly).
 
 ## Controls
 
 The Android version steers by touch: touch anywhere in space and the ship
-turns toward that point and thrusts while held. The Wiimote's IR pointer
-is the closest hardware equivalent, so that's what drives it:
+turns toward that point and thrusts while held. **Solo play** uses the
+Wiimote's IR pointer as the closest hardware equivalent to that:
 
-| Input | Action |
+| Input (solo) | Action |
 |---|---|
 | Point at the screen + hold **B** (trigger) | Turn toward the pointer and burn -- release to coast |
 | **A** | Fire weapon slot 1 (first equipped weapon) |
@@ -47,14 +52,46 @@ is the closest hardware equivalent, so that's what drives it:
 | **D-Pad Up** | Leave orbit (while parked at a planet) |
 | **HOME** | Quit to the system menu |
 
-Weapon slots are assigned in the same order the HUD buttons are laid out
-in, so the on-screen `[A]`/`[1]`/`[2]` labels next to each weapon always
-match. Only one Wiimote is used; a Sensor Bar is required for the IR
-pointer (as with any Wii software that uses one).
+**Multiplayer** can't use the IR pointer -- with the screen split into
+quadrants, one absolute pointer position on the shared sensor bar doesn't
+say which player's quadrant it belongs to. Each Wiimote instead steers
+directly, D-pad style:
 
-Menus (main menu, outfitting bay) use the D-Pad to move, **A** to
-confirm/toggle, **Left/Right** to adjust a level or cycle a value, and
-**B** to cancel.
+| Input (multiplayer, per Wiimote) | Action |
+|---|---|
+| **D-Pad Left / Right** | Turn left / right |
+| **D-Pad Up** (hold) | Thrust |
+| **D-Pad Down** | Leave orbit |
+| **A** or **B** | Fire weapon slot 1 |
+| **1** | Fire weapon slot 2 |
+| **2** | Fire weapon slot 3 |
+| **-** | Toggle shields |
+| **+** | Toggle cloak |
+
+In both modes, weapon slots are assigned in the same order the HUD buttons
+are laid out in, so the on-screen `[A]`/`[1]`/`[2]` labels next to each
+weapon always match. Solo play requires a Sensor Bar for the IR pointer
+(as with any Wii software that uses one); multiplayer doesn't need one.
+
+Menus (main menu, outfitting bay, multiplayer setup) use the D-Pad to
+move, **A** to confirm/toggle, **Left/Right** to adjust a level or cycle a
+value, and **B** to cancel.
+
+## Multiplayer
+
+Pick **MULTIPLAYER (SPLIT-SCREEN)** from the main menu, choose 2-4 players
+with D-Pad Left/Right, sync that many Wiimotes (the setup screen shows
+which channels it sees), and press **A** to start. All players fly the
+loadout currently saved in the OUTFITTING BAY -- there's no per-player fit
+yet, so agree on one before starting, or just go with the default.
+
+The screen splits top/bottom for 2 players, or into a 2x2 grid for 3-4 (the
+4th cell sits empty for a 3-player match). Everyone shares one arena, one
+set of hazards, and no AI drones -- it's pilot vs. pilot. A destroyed
+ship's quadrant freezes on its last view and shows `SPECTATING`; the match
+ends the moment one player is left standing (or everyone's dead at once),
+and a results screen ranks everyone by kills before returning to the main
+menu.
 
 ## Building
 
@@ -91,7 +128,7 @@ source/
 ├── text.h/.c           HUD/menu text via libogc's console (deferred-draw queue)
 ├── hud.h/.c            bars, radar, weapon/defense buttons, status line
 ├── input.h/.c          Wiimote -> pilot intent
-├── menu.h/.c           main menu + outfitting bay
+├── menu.h/.c           main menu, outfitting bay, multiplayer setup
 └── main.c              video/GX/WPAD init, app state machine, game loop
 ```
 
@@ -109,6 +146,13 @@ a from-scratch Wii-native replacement for the Android `ui/` package
   a follow-up rather than guessed at here; the engine code (`gameworld.c`
   et al.) doesn't care who's driving the ship, so wiring up a host/client
   protocol on top of it later doesn't require touching the simulation.
+  Split-screen local multiplayer (2-4 players, one Wiimote each) is
+  ported -- see [Multiplayer](#multiplayer).
+- **Per-player loadouts.** Split-screen multiplayer gives every player the
+  same shared loadout (whatever's saved in the OUTFITTING BAY); the
+  Android app only ever had one player's loadout to begin with, so this
+  is new ground rather than a gap versus Android. A per-player outfitting
+  step before a match would be the natural next step.
 - **Sound.** The Android build has none either (see its own roadmap);
   this port doesn't add any.
 - **Persistent loadout.** The outfitting bay's saved fit lives in memory
